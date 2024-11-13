@@ -14,10 +14,17 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
 
     public float moveSpeed = 2f;
     public float attackRange = 1.5f;
-    public float detectRange = 5f;
-    public float health = 100f;
+    public float detectRange = 10f;
+    public float MaxHealth;
 
-    private Vector3 destination;
+    public float Health { get; set; }
+    public float AttackPower { get; set; }
+    public float DefensePower { get; set; }
+
+    public Item EquippedWeapon { get; set; }
+    public Item EquippedArmor { get; set; }
+
+    [field:SerializeField] public GameObject ExitPoint {get; set; }
     private PlayerStateMachine stateMachine;
 
     public Action OnDeath;
@@ -37,6 +44,12 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
     public void Start()
     {
         CurrentTarget = FindObjectOfType<EnemyController>();
+        CharacterData data = CharacterDatabase.Instance.playerData;
+        MaxHealth = data.Health;
+        Health = data.Health;
+        AttackPower = data.AttackPower;
+        DefensePower = data.DefensePower;
+
     }
     public void Update()
     {
@@ -52,6 +65,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
     public void AutoMove()
     {
         //목적지로 이동
+        Vector3 destination = ExitPoint.transform.position;
         Vector3 direction  = (destination-transform.position).normalized;
         CharacterController.Move(direction * moveSpeed * Time.deltaTime);
         //목적지에 도달하면 다음 목적지 설정
@@ -77,6 +91,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
             //만약 적이라면
             if(hit.CompareTag("Enemy"))
             {
+                Debug.Log("적 찾았다");
                 //현재 타겟을 그 적으로 변경
                 CurrentTarget = hit.GetComponent<EnemyController>();
                 return true;
@@ -90,6 +105,10 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
     { 
       
         if(CurrentTarget ==null)
+            return;
+
+        //죽으면 내비둬
+        if (CurrentTarget.Health <= 0f)
             return;
 
         //공격범위내로 이동
@@ -117,13 +136,14 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
 
 public void TakeDamage(float damage)
     {
-        health -= damage;
-        if(health<=0f)
+        Health -= damage;
+        if(Health<=0f)
         {
             Die();
         }
         //체력변경 알림
         OnHealthUpdate?.Invoke();
+        Debug.Log($"{this.name}가 공격받았다. HP : {Health}");
     }
 
     public void Die()

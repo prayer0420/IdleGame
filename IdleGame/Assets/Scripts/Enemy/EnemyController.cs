@@ -13,8 +13,13 @@ public class EnemyController : MonoBehaviour
     public float sightRange = 10f;
     public float attackRange = 1.5f;
     public float moveSpeed = 2f;
-    public float health = 50f;
-    public bool IsDead => health <= 0f;
+    public float Health { get; private set; }
+    public float AttackPower { get; private set; }
+    public float DefensePower { get; private set; }
+    private EnemyData enemyData;
+
+
+    public bool IsDead => Health <= 0f;
 
     public void Awake()
     {
@@ -28,6 +33,16 @@ public class EnemyController : MonoBehaviour
     public void Start()
     {
         stateMachine.ChangeState(stateMachine.IdleState);
+        
+        // 적 데이터 로드
+        int enemyID = 1; // 적의 ID를 설정
+        enemyData = EnemyDatabase.Instance.EnemyDatas.Find(e => e.EnemyID == enemyID);
+        if (enemyData != null)
+        {
+            Health = enemyData.Health;
+            AttackPower = enemyData.AttackPower;
+            DefensePower = enemyData.DefensePower;
+        }
     }
 
     public void Update()
@@ -60,23 +75,28 @@ public class EnemyController : MonoBehaviour
         if(direction != Vector3.zero)
         {
             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, 720* Time.deltaTime);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, Time.deltaTime);
         }
     }
 
     public void AttackPlayer()
     {
+        //죽으면 내비둬
+        if (PlayerController.Instance.Health <= 0f)
+            return;
         //플레이어에게 데미지 입히기
         PlayerController.Instance.TakeDamage(5f);
+        
     }
 
     public void TakeDamage(float damage)
     {
-        health -= damage;
+        Health -= damage;
         if (IsDead)
         {
             Die();
         }
+        Debug.Log($"{this.name}가 공격받았다. HP : {Health}");
     }
 
     private void Die()
