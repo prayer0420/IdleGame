@@ -8,6 +8,7 @@ public class CharacterDatabase : SingletonDontDestroyOnLoad<CharacterDatabase>
 {
     public CharacterData playerData;
 
+    public Action DataLoadComplete;
     public void Start()
     {
         StartCoroutine(LoadCharacterDataFromGoogleSheet());
@@ -31,6 +32,7 @@ public class CharacterDatabase : SingletonDontDestroyOnLoad<CharacterDatabase>
 
             CharacterDataWrapper wrapper = JsonUtility.FromJson<CharacterDataWrapper>(jsonData);
             playerData = wrapper.Characters[0];
+            DataLoadComplete?.Invoke();
         }
     }
 }

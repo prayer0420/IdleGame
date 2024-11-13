@@ -30,10 +30,27 @@ public class EnemyController : MonoBehaviour
         playerTransform = PlayerController.Instance.transform;
     }
 
+    public void OnEnable()
+    {
+        EnemyDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+    }
+    public void OnDisable()
+    {
+        EnemyDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
+    }
     public void Start()
     {
         stateMachine.ChangeState(stateMachine.IdleState);
         
+    }
+
+    public void Update()
+    {
+        stateMachine.Update();
+    }
+
+    public void HandleDataLoadComplete()
+    {
         // 적 데이터 로드
         int enemyID = 1; // 적의 ID를 설정
         enemyData = EnemyDatabase.Instance.EnemyDatas.Find(e => e.EnemyID == enemyID);
@@ -43,11 +60,6 @@ public class EnemyController : MonoBehaviour
             AttackPower = enemyData.AttackPower;
             DefensePower = enemyData.DefensePower;
         }
-    }
-
-    public void Update()
-    {
-        stateMachine.Update();
     }
 
     public bool CanSeePlayer()
@@ -75,18 +87,22 @@ public class EnemyController : MonoBehaviour
         if(direction != Vector3.zero)
         {
             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, Time.deltaTime);
+            float rotationSpeed = 10f;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, rotation, rotationSpeed*Time.deltaTime);
         }
     }
 
     public void AttackPlayer()
     {
+        Debug.Log("플레이어를 공격");
         //죽으면 내비둬
         if (PlayerController.Instance.Health <= 0f)
+        {
+            Debug.Log(PlayerController.Instance.Health);
             return;
+        }
         //플레이어에게 데미지 입히기
         PlayerController.Instance.TakeDamage(5f);
-        
     }
 
     public void TakeDamage(float damage)

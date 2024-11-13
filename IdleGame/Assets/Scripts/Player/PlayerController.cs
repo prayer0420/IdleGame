@@ -14,7 +14,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
 
     public float moveSpeed = 2f;
     public float attackRange = 1.5f;
-    public float detectRange = 10f;
+    public float detectRange = 5f;
     public float MaxHealth;
 
     public float Health { get; set; }
@@ -41,20 +41,27 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         stateMachine = new PlayerStateMachine(this);
     }
 
-    public void Start()
+    public void OnEnable()
     {
-        CurrentTarget = FindObjectOfType<EnemyController>();
-        CharacterData data = CharacterDatabase.Instance.playerData;
-        MaxHealth = data.Health;
-        Health = data.Health;
-        AttackPower = data.AttackPower;
-        DefensePower = data.DefensePower;
-
+        CharacterDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+    }
+    public void OnDisable()
+    {
+        CharacterDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
     }
     public void Update()
     {
-        //상태머신 업데이트
         stateMachine.Update();
+    }
+
+    public void HandleDataLoadComplete()
+    {
+        CharacterData data = CharacterDatabase.Instance.playerData;
+        MaxHealth = data.Health;
+        Health = data.Health;
+        Debug.Log(Health);
+        AttackPower = data.AttackPower;
+        DefensePower = data.DefensePower;
     }
 
     public void SetNextDestination()
@@ -68,6 +75,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         Vector3 destination = ExitPoint.transform.position;
         Vector3 direction  = (destination-transform.position).normalized;
         CharacterController.Move(direction * moveSpeed * Time.deltaTime);
+
         //목적지에 도달하면 다음 목적지 설정
         if(Vector3.Distance(transform.position, destination)<0.1f)
         {
@@ -94,6 +102,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
                 Debug.Log("적 찾았다");
                 //현재 타겟을 그 적으로 변경
                 CurrentTarget = hit.GetComponent<EnemyController>();
+                Debug.Log(CurrentTarget.name);
                 return true;
             }    
         }
@@ -103,12 +112,11 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
 
     public void AttackEnemy()
     { 
-      
-        if(CurrentTarget ==null)
+        if(CurrentTarget == null)
             return;
 
         //죽으면 내비둬
-        if (CurrentTarget.Health <= 0f)
+        if (CurrentTarget.IsDead)
             return;
 
         //공격범위내로 이동
@@ -120,6 +128,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         }
         else
         {
+            Debug.Log("공격");
             CurrentTarget.TakeDamage(10f);
         }
 
@@ -127,8 +136,10 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         Vector3 targetDirection = (CurrentTarget.transform.position - transform.position).normalized;
         if (targetDirection != Vector3.zero)
         {
+            Debug.Log("적 바라보기");
             Quaternion toRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, 720 * Time.deltaTime);
+            float rotationSpeed = 10f; 
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed*Time.deltaTime);
         }
     }
 

@@ -8,6 +8,7 @@ using UnityEngine.Networking;
 public class EnemyDatabase : SingletonDontDestroyOnLoad<EnemyDatabase>
 {
     public List<EnemyData> EnemyDatas= new List<EnemyData>();
+    public Action DataLoadComplete;
 
     public void Start()
     {
@@ -30,6 +31,7 @@ public class EnemyDatabase : SingletonDontDestroyOnLoad<EnemyDatabase>
             string jsonData = www.downloadHandler.text;
             EnemyDatatWrapper wrapper = JsonUtility.FromJson<EnemyDatatWrapper>(jsonData);
             EnemyDatas = wrapper.Enemies;
+            DataLoadComplete?.Invoke();
         }
     }
 }
