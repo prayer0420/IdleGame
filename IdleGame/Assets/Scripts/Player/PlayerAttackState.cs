@@ -4,25 +4,32 @@ using UnityEngine;
 
 public class PlayerAttackState : IState
 {
-    private PlayerStateMachine playerStateMachine;
+    private PlayerStateMachine stateMachine;
 
     public PlayerAttackState(PlayerStateMachine playerStateMachine)
     {
-        this.playerStateMachine = playerStateMachine;
+        this.stateMachine = playerStateMachine;
     }
 
     public void Enter()
     {
         //공격 애니메이션 시작
-        playerStateMachine.PlayerController.Animator.SetTrigger("Attack");
+        stateMachine.PlayerController.Animator.SetTrigger("Attack");
     }
 
     public void Execute()
     {
-        //공격할 대상이 없거나 플레이어가 죽었으면 이동상태로 전환
-
-
-        //그게아니라면 계속 공격
+        if (stateMachine.PlayerController.CurrentTarget == null || stateMachine.PlayerController.CurrentTarget.IsDead)
+        {
+            // 공격할 대상이 없거나 죽었으면 이동 상태로 전환
+            stateMachine.PlayerController.CurrentTarget = null;
+            stateMachine.ChangeState(stateMachine.MoveState);
+        }
+        else
+        {
+            // 적 공격
+            stateMachine.PlayerController.AttackEnemy();
+        }
     }
 
     public void Exit()

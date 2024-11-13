@@ -16,22 +16,29 @@ public class PlayerMoveState : IState
     public void Enter()
     {
         //이동 애니메이션 시작
-
-        //다음 목적시 설정
+        stateMachine.PlayerController.Animator.SetBool("isMoving", true);
+        //다음 목적지 설정
+        stateMachine.PlayerController.SetNextDestination();
     }
 
     public void Execute()
     {
 
         //자동 이동
+        stateMachine.PlayerController.AutoMove();
 
         //몬스터 감지
 
-        //공격상태로 전환
+        if(stateMachine.PlayerController.IsEnemyInRange())
+        {
+            //공격상태로 전환
+            stateMachine.ChangeState(stateMachine.AttackState);
+        }
     }
 
     public void Exit()
     {
         //이동 애니메이션 종료
+        stateMachine.PlayerController.Animator.SetBool("isMoving", false);
     }
 }
