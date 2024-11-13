@@ -18,6 +18,8 @@ public class EnemyController : MonoBehaviour
     public float DefensePower { get; private set; }
     private EnemyData enemyData;
 
+    public MapController currentMap; // 현재 맵 정보를 저장
+
 
     public bool IsDead => Health <= 0f;
 
@@ -37,6 +39,9 @@ public class EnemyController : MonoBehaviour
     public void OnDisable()
     {
         EnemyDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
+        Health = 100f;
+        AttackPower = 10f;
+        DefensePower = 5f;
     }
     public void Start()
     {
@@ -118,6 +123,19 @@ public class EnemyController : MonoBehaviour
     private void Die()
     {
         Animator.SetTrigger("Die");
-        
+        // 현재 맵에 몬스터 사망을 알림
+        if (currentMap != null)
+        {
+            currentMap.OnMonsterDeath(gameObject);
+        }
+        // 사망 애니메이션 후 오브젝트 반환
+        StartCoroutine(HandleDeath());
+    }
+
+    private IEnumerator HandleDeath()
+    {
+        // 사망 애니메이션이 끝날 때까지 대기 (애니메이션 이벤트를 사용할 수도 있음)
+        yield return new WaitForSeconds(2f); // 예시: 2초 대기
+        gameObject.SetActive(false);
     }
 }

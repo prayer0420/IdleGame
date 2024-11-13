@@ -30,10 +30,14 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
     public Action OnDeath;
     public Action OnHealthUpdate;
 
+    public float interactionRange = 2f;
+    public void OnEnable()
+    {
+        CharacterDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+    }
     protected override  void Awake()
     {
         base.Awake();
-
         Animator = GetComponent<Animator>();
         CharacterController = GetComponent<CharacterController>();
 
@@ -41,10 +45,12 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         stateMachine = new PlayerStateMachine(this);
     }
 
-    public void OnEnable()
+    public void Start()
     {
-        CharacterDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+        SetStartPosition();
+        SetNextDestination();
     }
+
     public void OnDisable()
     {
         CharacterDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
@@ -52,6 +58,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
     public void Update()
     {
         stateMachine.Update();
+        CheckIfReachedExit();
     }
 
     public void HandleDataLoadComplete()
@@ -59,16 +66,46 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         CharacterData data = CharacterDatabase.Instance.playerData;
         MaxHealth = data.Health;
         Health = data.Health;
-        Debug.Log(Health);
         AttackPower = data.AttackPower;
         DefensePower = data.DefensePower;
+    }
+    public  void SetStartPosition()
+    {
+        GameObject entrance = GameObject.FindGameObjectWithTag("Entrance");
+        if (entrance != null)
+        {
+            transform.position = entrance.transform.position;
+            transform.rotation = entrance.transform.rotation;
+        }
+        else
+        {
+            Debug.LogError("Entrance not found in the current map.");
+        }
     }
 
     public void SetNextDestination()
     {
-        //던전매니저로부터 다음목적지 설정
-    }
+        ExitPoint = GameObject.FindGameObjectWithTag("Exit");
+        if (ExitPoint == null)
+        {
+            Debug.LogError("ExitPoint not found in the current map.");
+            return;
+        }
 
+        Debug.Log($"Next ExitPoint found at: {ExitPoint.transform.position}");
+    }
+    private void CheckIfReachedExit()
+    {
+        if (ExitPoint == null)
+            return;
+
+        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < 1f)
+        {
+            // Exit에 도달함
+            MapManager.Instance.OnPlayerReachExit();
+            SetNextDestination();
+        }
+    }
     public void AutoMove()
     {
         //목적지로 이동
@@ -85,7 +122,8 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
         if(direction!=Vector3.zero)
         {
             Quaternion rotation = Quaternion.LookRotation(direction, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation,rotation, Time.deltaTime);
+            float rotationSpeed = 10f;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation,rotation, rotationSpeed* Time.deltaTime);
         }
     }
 
@@ -145,7 +183,7 @@ public class PlayerController : SingletonDontDestroyOnLoad<PlayerController>
 
 
 
-public void TakeDamage(float damage)
+    public void TakeDamage(float damage)
     {
         Health -= damage;
         if(Health<=0f)
@@ -162,5 +200,29 @@ public void TakeDamage(float damage)
         Animator.SetTrigger("Die");
         //사망 이벤트 호출
         OnDeath?.Invoke();
+    }
+    public void CheckForItemInteraction()
+    {
+        Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, interactionRange))
+        {
+            if (hit.collider.CompareTag("Item"))
+            {
+                ItemPickup itemPickup = hit.collider.GetComponent<ItemPickup>();
+                if (itemPickup != null)
+                {
+                    // 아이템 설명 표시
+                    UIManager.instance.ShowItemDescription(itemPickup.item);
+
+                    // 아이템 획득
+                    Inventory.Instance.AddItem(itemPickup.item);
+
+                    // 아이템 오브젝트 제거
+                    Destroy(hit.collider.gameObject);
+                }
+            }
+        }
     }
 }

@@ -28,7 +28,6 @@ public class CharacterDatabase : SingletonDontDestroyOnLoad<CharacterDatabase>
         else
         {
             string jsonData = www.downloadHandler.text;
-            Debug.Log("Received JSON for Characters: " + jsonData); // JSON 데이터 출력
 
             CharacterDataWrapper wrapper = JsonUtility.FromJson<CharacterDataWrapper>(jsonData);
             playerData = wrapper.Characters[0];
