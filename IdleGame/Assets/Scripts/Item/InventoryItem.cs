@@ -1,22 +1,45 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class InventoryItem : MonoBehaviour
+public class InventoryItem : MonoBehaviour, IPointerClickHandler
 {
     public Image itemIcon;
-    public Text itemNameText;
+    public Text itemCountText;
 
-    private Item item;
+    private ItemSlot itemSlot;
 
-    public void SetItem(Item newItem)
+    public void SetupSlotUI(ItemSlot slot)
     {
-        item = newItem;
-        itemIcon.sprite = item.ItemIcon;
-        itemNameText.text = item.ItemName;
+        itemSlot = slot;
+        itemSlot.onSelectChange += UpdateUI;
+        UpdateUI();
     }
 
-    public void OnClickUseItem()
+    private void UpdateUI()
     {
-        Inventory.Instance.UseItem(item);
+        if (itemSlot.slotItem != null)
+        {
+            itemIcon.sprite = itemSlot.slotItem.ItemIcon;
+            itemIcon.enabled = true;
+            if (itemSlot.itemCount > 1)
+            {
+                itemCountText.text = itemSlot.itemCount.ToString();
+            }
+            else
+            {
+                itemCountText.text = "";
+            }
+        }
+        else
+        {
+            itemIcon.enabled = false;
+            itemCountText.text = "";
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        Inventory.Instance.SelectItemSlot(itemSlot.slotIndex);
     }
 }

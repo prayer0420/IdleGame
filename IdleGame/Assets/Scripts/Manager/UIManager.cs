@@ -53,11 +53,14 @@ public class UIManager : SingletonDontDestroyOnLoad<UIManager>
         }
 
         // 货肺款 酒捞袍 UI 积己
-        foreach (Item item in Inventory.Instance.items)
+        foreach (var item in Inventory.Instance.items)
         {
             GameObject itemObj = Instantiate(inventoryItemPrefab, inventoryContent);
             InventoryItem inventoryItem = itemObj.GetComponent<InventoryItem>();
-            inventoryItem.SetItem(item);
+            if (inventoryItem != null)
+            {
+                inventoryItem.SetupSlotUI(item);
+            }
         }
     }
 

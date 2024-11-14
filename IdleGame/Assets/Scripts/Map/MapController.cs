@@ -4,48 +4,85 @@ using UnityEngine;
 public class MapController : MonoBehaviour
 {
     public List<GameObject> monsterPrefabs; // 스폰할 몬스터 프리팹 리스트
-    public int monsterCount = 5; // 스폰할 몬스터 수
+    public int monsterCount; // 스폰할 몬스터 수
     public float minSpawnDistanceFromPlayer = 5f; // 플레이어로부터 최소 스폰 거리
 
-    private List<GameObject> spawnedMonsters = new List<GameObject>();
+    [SerializeField] public List<GameObject> spawnedMonsters = new List<GameObject>();
     private Collider mapCollider; // 맵의 콜라이더
 
-    public void Start()
+    // Awake에서 mapCollider를 할당
+    public void Awake()
     {
         mapCollider = GetComponent<Collider>();
         if (mapCollider == null)
         {
             Debug.LogError("MapController에 Collider가 없습니다.");
-            return;
+        }
+    }
+
+    public void Start()
+    {
+        // 출구 비활성화
+        GameObject exitPoint = transform.Find("Exit")?.gameObject;
+        if (exitPoint != null)
+        {
+            exitPoint.SetActive(false);
+        }
+        else
+        {
+            Debug.LogError("Exit 포인트가 맵 프리팹에 존재하지 않습니다.");
         }
 
         SpawnMonsters();
     }
 
-    private void SpawnMonsters()
+    public void SpawnMonsters()
     {
+        if (monsterPrefabs == null || monsterPrefabs.Count == 0)
+        {
+            Debug.LogWarning("몬스터 프리팹이 할당되지 않았습니다.");
+            return;
+        }
+
         for (int i = 0; i < monsterCount; i++)
         {
             int randomIndex = Random.Range(0, monsterPrefabs.Count);
-            GameObject monster = ObjectPool.Instance.GetObject(monsterPrefabs[randomIndex]);
+            GameObject monsterPrefab = monsterPrefabs[randomIndex];
+            GameObject monster = ObjectPool.Instance.GetObject(monsterPrefab);
+
+            if (monster == null)
+            {
+                Debug.LogWarning("몬스터 인스턴스를 가져올 수 없습니다.");
+                continue;
+            }
 
             Vector3 randomPosition = GetRandomPositionWithinMap();
             monster.transform.position = randomPosition;
             monster.transform.rotation = Quaternion.identity;
-            monster.SetActive(true);
-            spawnedMonsters.Add(monster);
 
             // 몬스터에게 현재 맵 정보를 전달
             EnemyController enemyController = monster.GetComponent<EnemyController>();
             if (enemyController != null)
             {
                 enemyController.currentMap = this;
+                spawnedMonsters.Add(monster);
+            }
+            else
+            {
+                ObjectPool.Instance.ReturnObject(monster);
+                Debug.LogError("몬스터 프리팹에 EnemyController가 없습니다.");
             }
         }
     }
 
     private Vector3 GetRandomPositionWithinMap()
     {
+        if (mapCollider == null)
+        {
+            Debug.LogError("MapController의 Collider가 설정되지 않았습니다.");
+            return Vector3.zero;
+        }
+
         Bounds bounds = mapCollider.bounds;
         Vector3 randomPosition;
 
@@ -57,21 +94,14 @@ public class MapController : MonoBehaviour
         {
             float posX = Random.Range(bounds.min.x, bounds.max.x);
             float posZ = Random.Range(bounds.min.z, bounds.max.z);
-            float posY = -1.65f;
+            float posY = 0;
 
             randomPosition = new Vector3(posX, posY, posZ);
 
             if (PlayerController.Instance != null)
             {
                 float distanceToPlayer = Vector3.Distance(randomPosition, PlayerController.Instance.transform.position);
-                if (distanceToPlayer < minSpawnDistanceFromPlayer)
-                {
-                    validPosition = false;
-                }
-                else
-                {
-                    validPosition = true;
-                }
+                validPosition = distanceToPlayer >= minSpawnDistanceFromPlayer;
             }
             else
             {
@@ -82,24 +112,45 @@ public class MapController : MonoBehaviour
         }
         while (!validPosition && attempts < maxAttempts);
 
+        if (!validPosition)
+        {
+            Debug.LogWarning("유효한 스폰 위치를 찾지 못했습니다. 기본 위치 사용.");
+            randomPosition = bounds.center;
+        }
+
         return randomPosition;
     }
 
     public void OnMonsterDeath(GameObject monster)
     {
-        spawnedMonsters.Remove(monster);
-        ObjectPool.Instance.ReturnObject(monster);
-
-        if (spawnedMonsters.Count == 0)
+        if (spawnedMonsters.Contains(monster))
         {
-            // 모든 몬스터가 제거되었을 때 MapManager에 알림
-            MapManager.Instance.OnAllMonstersDefeated();
+            spawnedMonsters.Remove(monster);
+            ObjectPool.Instance.ReturnObject(monster);
+
+            if (spawnedMonsters.Count == 0)
+            {
+                ActivateExit();
+            }
         }
     }
 
-    public void OnDisable()
+    private void ActivateExit()
     {
-        // 맵이 비활성화될 때 남은 몬스터를 모두 반환
+        GameObject exitPoint = transform.Find("Exit")?.gameObject;
+        if (exitPoint != null)
+        {
+            exitPoint.SetActive(true);
+            Debug.Log("Exit point activated.");
+        }
+        else
+        {
+            Debug.LogError("Exit 포인트를 찾을 수 없습니다.");
+        }
+    }
+
+    void OnDisable()
+    {
         foreach (GameObject monster in spawnedMonsters)
         {
             ObjectPool.Instance.ReturnObject(monster);

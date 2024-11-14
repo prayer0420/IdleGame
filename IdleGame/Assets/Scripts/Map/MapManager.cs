@@ -19,22 +19,31 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
 
     public void LoadNextMap()
     {
+
+
         GameObject mapPrefab;
 
         if (currentMapIndex < 5)
         {
             // 일반 맵 로드 (랜덤하게)
+            if (normalMapPrefabs.Count == 0)
+            {
+                return;
+            }
             int randomIndex = Random.Range(0, normalMapPrefabs.Count);
             mapPrefab = normalMapPrefabs[randomIndex];
         }
         else
         {
             // 보스 맵 로드
+            if (bossMapPrefab == null)
+            {
+                return;
+            }
             mapPrefab = bossMapPrefab;
             currentMapIndex = -1; // 다음에 다시 일반 맵으로 돌아가도록 설정
         }
 
-        // ObjectPool을 통해 맵 인스턴스 가져오기
         GameObject newMap = ObjectPool.Instance.GetObject(mapPrefab);
         newMap.transform.SetParent(transform); // MapManager의 자식으로 설정
 
@@ -43,22 +52,23 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             // 이전 맵의 Exit 포인트와 새로운 맵의 Entrance 포인트를 맞추기
             Transform previousExit = previousMap.transform.Find("Exit");
             Transform newEntrance = newMap.transform.Find("Entrance");
-
             if (previousExit != null && newEntrance != null)
             {
-                // 이전 Exit의 월드 위치
-                Vector3 previousExitWorldPos = previousExit.position;
-
-                // 새로운 Entrance의 월드 위치를 이전 Exit 위치로 맞추기 위해 오프셋 계산
-                Vector3 positionOffset = previousExitWorldPos - newEntrance.position;
-
+                Vector3 positionOffset = previousExit.position - newEntrance.position;
                 newMap.transform.position += positionOffset;
 
-                Debug.Log($"Previous Exit Position: {previousExitWorldPos}, New Entrance Position: {newEntrance.position}, Position Offset: {positionOffset}, New Map Position: {newMap.transform.position}");
-            }
-            else
-            {
-                Debug.LogError("Exit 또는 Entrance 포인트가 맵 프리팹에 존재하지 않습니다.");
+                // 플레이어가 존재하지 않으면 반환
+                if (PlayerController.Instance == null)
+                {
+                    return;
+                }
+
+                // 플레이어의 위치 조정
+                if (PlayerController.Instance != null)
+                {
+                    PlayerController.Instance.transform.position = newEntrance.position;
+                    PlayerController.Instance.transform.rotation = newEntrance.rotation;
+                }
             }
         }
         else
@@ -79,18 +89,21 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             ObjectPool.Instance.ReturnObject(oldMap);
         }
 
-        // 플레이어 위치 설정 (새로운 맵이 로드된 후)
-        PlayerController.Instance.SetStartPosition();
+        // 플레이어의 다음 목적지 설정
+        if (PlayerController.Instance != null)
+        {
+            PlayerController.Instance.SetNextDestination();
+        }
+
+        MapController mapController = newMap.GetComponent<MapController>();
+        if (mapController != null)
+        {
+            mapController.SpawnMonsters();
+        }
     }
 
-    // 플레이어가 Exit에 도달했을 때 호출되는 메소드
+    // 플레이어가 Exit에 도달했을 때 
     public void OnPlayerReachExit()
-    {
-        LoadNextMap();
-    }
-
-    // 현재 맵의 몬스터가 모두 제거되었을 때 호출되는 메소드
-    public void OnAllMonstersDefeated()
     {
         LoadNextMap();
     }

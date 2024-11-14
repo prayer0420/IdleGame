@@ -20,6 +20,14 @@ public class EnemyController : MonoBehaviour
 
     public MapController currentMap; // 현재 맵 정보를 저장
 
+    public float gravity = -9.81f;
+    private Vector3 velocity;
+    private bool isGrounded;
+    public float groundCheckDistance = 0.4f;
+    public LayerMask groundMask;
+
+    public Transform groundCheck;
+
 
     public bool IsDead => Health <= 0f;
 
@@ -34,8 +42,29 @@ public class EnemyController : MonoBehaviour
 
     public void OnEnable()
     {
-        EnemyDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+        if (EnemyDatabase.Instance.EnemyDatas != null && EnemyDatabase.Instance.EnemyDatas.Count > 0)
+        {
+            HandleDataLoadComplete();
+        }
+        else
+        {
+            EnemyDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
+        }
     }
+
+    public void HandleDataLoadComplete()
+    {
+        // 적 데이터 로드
+        int enemyID = 1; // 적의 ID를 설정하거나 프리팹에서 설정할 수 있도록 변경
+        enemyData = EnemyDatabase.Instance.EnemyDatas.Find(e => e.EnemyID == enemyID);
+        if (enemyData != null)
+        {
+            Health = enemyData.Health;
+            AttackPower = enemyData.AttackPower;
+            DefensePower = enemyData.DefensePower;
+        }
+    }
+
     public void OnDisable()
     {
         EnemyDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
@@ -51,20 +80,20 @@ public class EnemyController : MonoBehaviour
 
     public void Update()
     {
+        HandleGravity();
         stateMachine.Update();
     }
-
-    public void HandleDataLoadComplete()
+    private void HandleGravity()
     {
-        // 적 데이터 로드
-        int enemyID = 1; // 적의 ID를 설정
-        enemyData = EnemyDatabase.Instance.EnemyDatas.Find(e => e.EnemyID == enemyID);
-        if (enemyData != null)
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckDistance, groundMask);
+
+        if (isGrounded && velocity.y < 0)
         {
-            Health = enemyData.Health;
-            AttackPower = enemyData.AttackPower;
-            DefensePower = enemyData.DefensePower;
+            velocity.y = -2f; // 약간의 아래로 힘을 주어 Grounded 상태를 유지
         }
+
+        velocity.y += gravity * Time.deltaTime;
+        CharacterController.Move(velocity * Time.deltaTime);
     }
 
     public bool CanSeePlayer()
@@ -128,14 +157,16 @@ public class EnemyController : MonoBehaviour
         {
             currentMap.OnMonsterDeath(gameObject);
         }
-        // 사망 애니메이션 후 오브젝트 반환
+        // 사망 애니메이션 후 처리
         StartCoroutine(HandleDeath());
     }
 
     private IEnumerator HandleDeath()
     {
-        // 사망 애니메이션이 끝날 때까지 대기 (애니메이션 이벤트를 사용할 수도 있음)
-        yield return new WaitForSeconds(2f); // 예시: 2초 대기
+        // 사망 애니메이션의 길이만큼 대기
+        yield return new WaitForSeconds(2f); // 애니메이션 길이에 맞게 조정하세요.
+                                             // 게임 오브젝트 비활성화
         gameObject.SetActive(false);
     }
+
 }

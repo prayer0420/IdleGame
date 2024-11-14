@@ -3,47 +3,59 @@ using UnityEngine;
 
 public class ObjectPool : SingletonDontDestroyOnLoad<ObjectPool>
 {
-
     private Dictionary<string, Queue<GameObject>> poolDictionary;
+
     protected override void Awake()
     {
         base.Awake();
         poolDictionary = new Dictionary<string, Queue<GameObject>>();
     }
 
-    // 오브젝트를 가져오는 일반 메소드
     public GameObject GetObject(GameObject prefab)
     {
-        string key = prefab.name;
+        string key = prefab.name.Replace("(Clone)", "");
 
         if (!poolDictionary.ContainsKey(key))
         {
             poolDictionary[key] = new Queue<GameObject>();
         }
 
+        GameObject obj;
         if (poolDictionary[key].Count > 0)
         {
-            GameObject obj = poolDictionary[key].Dequeue();
-            obj.SetActive(true);
-            return obj;
+            obj = poolDictionary[key].Dequeue();
+            if (obj == null)
+            {
+                // null인 경우 다시 생성
+                obj = Instantiate(prefab);
+                obj.name = key;
+            }
         }
         else
         {
-            GameObject obj = Instantiate(prefab);
+            obj = Instantiate(prefab);
             obj.name = key;
-            return obj;
         }
+
+        obj.SetActive(true);
+        return obj;
     }
 
-    // 오브젝트를 반환하는 일반 메소드
     public void ReturnObject(GameObject obj)
     {
         obj.SetActive(false);
-        if (!poolDictionary.ContainsKey(obj.name))
-        {
-            poolDictionary[obj.name] = new Queue<GameObject>();
-        }
-        poolDictionary[obj.name].Enqueue(obj);
-    }
+        string key = obj.name.Replace("(Clone)", "");
 
+        if (!poolDictionary.ContainsKey(key))
+        {
+            poolDictionary[key] = new Queue<GameObject>();
+        }
+
+        // 오브젝트 초기화
+        obj.transform.SetParent(null);
+        obj.transform.position = Vector3.zero;
+        obj.transform.rotation = Quaternion.identity;
+
+        poolDictionary[key].Enqueue(obj);
+    }
 }

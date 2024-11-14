@@ -8,13 +8,10 @@ using UnityEngine.Networking;
 public class ItemDatabase : SingletonDontDestroyOnLoad<ItemDatabase>
 {
     public List<ItemData> ItemDatas = new List<ItemData>();
+    public Action DataLoadComplete;
 
-    public void Start()
-    {
-        StartCoroutine(LoadItemsFromGoogleSheet());
-    }
 
-    private IEnumerator LoadItemsFromGoogleSheet()
+    public IEnumerator LoadItemsFromGoogleSheet()
     {
         //구글 스프레드 URL
         string url = "https://script.google.com/macros/s/AKfycbzLRToIEI44n23liWAisvYL7tFYBL3lq70RmLal74ye8WFsB2yvRchb7JqXthT_HgPd/exec?sheet=Items"; 
@@ -32,6 +29,7 @@ public class ItemDatabase : SingletonDontDestroyOnLoad<ItemDatabase>
             // JSON 데이터 역직렬화
             ItemDataListWrapper wrapper = JsonUtility.FromJson<ItemDataListWrapper>(jsonData);
             ItemDatas = wrapper.Items;
+            DataLoadComplete?.Invoke();
         }
     }
 }

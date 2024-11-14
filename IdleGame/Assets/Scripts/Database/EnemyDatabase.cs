@@ -10,12 +10,7 @@ public class EnemyDatabase : SingletonDontDestroyOnLoad<EnemyDatabase>
     public List<EnemyData> EnemyDatas= new List<EnemyData>();
     public Action DataLoadComplete;
 
-    public void Start()
-    {
-        StartCoroutine(LoadCharacterDataFromGoogleSheet());
-    }
-
-    private IEnumerator LoadCharacterDataFromGoogleSheet()
+    public IEnumerator LoadEnemiesDataFromGoogleSheet()
     {
         string url = "https://script.google.com/macros/s/AKfycbzLRToIEI44n23liWAisvYL7tFYBL3lq70RmLal74ye8WFsB2yvRchb7JqXthT_HgPd/exec?sheet=Enemies";
 
