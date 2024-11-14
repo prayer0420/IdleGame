@@ -20,17 +20,6 @@ public class MapController : MonoBehaviour
         }
     }
 
-    public void Start()
-    {
-        //// 출구 비활성화
-        //GameObject exitPoint = transform.Find("Exit")?.gameObject;
-        //if (exitPoint != null)
-        //{
-        //    exitPoint.SetActive(false);
-        //}
-        //SpawnMonsters();
-    }
-
     public void SpawnMonsters()
     {
         if (monsterPrefabs == null || monsterPrefabs.Count == 0)
@@ -41,12 +30,13 @@ public class MapController : MonoBehaviour
 
         for (int i = 0; i < monsterCount; i++)
         {
-            int randomIndex = Random.Range(0, monsterPrefabs.Count);
-            GameObject monsterPrefab = monsterPrefabs[randomIndex];
+            int index = i % monsterPrefabs.Count;
+            GameObject monsterPrefab = monsterPrefabs[index];
             GameObject monster = ObjectPool.Instance.GetObject(monsterPrefab);
 
             if (monster == null)
             {
+                Debug.LogWarning($"{monsterPrefab.name} 몬스터를 가져올 수 없습니다.");
                 continue;
             }
 
@@ -54,7 +44,7 @@ public class MapController : MonoBehaviour
             monster.transform.position = randomPosition;
             monster.transform.rotation = Quaternion.identity;
 
-            // 몬스터에게 현재 맵 정보를 전달
+            // 몬스터 초기화
             EnemyController enemyController = monster.GetComponent<EnemyController>();
             if (enemyController != null)
             {
@@ -95,6 +85,11 @@ public class MapController : MonoBehaviour
                 float distanceToPlayer = Vector3.Distance(randomPosition, PlayerController.Instance.transform.position);
                 validPosition = distanceToPlayer >= minSpawnDistanceFromPlayer;
             }
+            else
+            {
+                validPosition = true;
+            }
+
             attempts++;
         }
         while (!validPosition && attempts < maxAttempts);
@@ -116,7 +111,8 @@ public class MapController : MonoBehaviour
 
             if (spawnedMonsters.Count == 0)
             {
-                //ActivateExit();
+                // 모든 몬스터가 제거되었을 때 출구 활성화
+                ActivateExit();
             }
         }
     }
@@ -128,14 +124,19 @@ public class MapController : MonoBehaviour
         {
             exitPoint.SetActive(true);
         }
+        else
+        {
+            Debug.LogError("Exit 포인트를 찾을 수 없습니다.");
+        }
     }
 
-    //public void OnDisable()
-    //{
-    //    foreach (GameObject monster in spawnedMonsters)
-    //    {
-    //        ObjectPool.Instance.ReturnObject(monster);
-    //    }
-    //    spawnedMonsters.Clear();
-    //}
+    void OnDisable()
+    {
+        // 맵이 비활성화될 때 남은 몬스터를 모두 반환
+        foreach (GameObject monster in spawnedMonsters)
+        {
+            ObjectPool.Instance.ReturnObject(monster);
+        }
+        spawnedMonsters.Clear();
+    }
 }

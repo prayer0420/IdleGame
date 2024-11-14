@@ -7,7 +7,6 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
     public GameObject bossMapPrefab; // 보스 맵 프리팹
 
     private int currentMapIndex = 0;
-    private Queue<GameObject> mapQueue = new Queue<GameObject>();
     private GameObject previousMap; // 이전 맵을 저장
 
     private bool isLoadingMap = false;
@@ -23,7 +22,7 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
     {
         if (isLoadingMap)
         {
-            Debug.LogWarning("Already loading a map.");
+            Debug.LogWarning("이미 맵을 로드 중입니다.");
             return;
         }
         isLoadingMap = true;
@@ -32,22 +31,22 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
 
         if (currentMapIndex < 5)
         {
-            // 일반 맵 로드 (랜덤하게)
+            // 일반 맵 로드 (순환)
             if (normalMapPrefabs.Count == 0)
             {
-                Debug.LogError("No normal map prefabs assigned.");
+                Debug.LogError("할당된 일반 맵 프리팹이 없습니다.");
                 isLoadingMap = false;
                 return;
             }
-            int randomIndex = Random.Range(0, normalMapPrefabs.Count);
-            mapPrefab = normalMapPrefabs[randomIndex];
+            int index = currentMapIndex % normalMapPrefabs.Count;
+            mapPrefab = normalMapPrefabs[index];
         }
         else
         {
             // 보스 맵 로드
             if (bossMapPrefab == null)
             {
-                Debug.LogError("Boss map prefab not assigned.");
+                Debug.LogError("보스 맵 프리팹이 할당되지 않았습니다.");
                 isLoadingMap = false;
                 return;
             }
@@ -55,74 +54,49 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             currentMapIndex = -1; // 다음에 다시 일반 맵으로 돌아가도록 설정
         }
 
+        // ObjectPool에서 맵 가져오기
         GameObject newMap = ObjectPool.Instance.GetObject(mapPrefab);
         if (newMap == null)
         {
-            Debug.LogError($"Failed to get map from ObjectPool for prefab: {mapPrefab.name}");
+            Debug.LogError($"ObjectPool에서 {mapPrefab.name} 맵을 가져오지 못했습니다.");
             isLoadingMap = false;
             return;
         }
         newMap.transform.SetParent(transform); // MapManager의 자식으로 설정
-        newMap.SetActive(true); // 새 맵 활성화
 
+        // 맵 위치 조정 (Exit와 Entrance 연결)
         if (previousMap != null)
         {
-            // 이전 맵의 Exit 포인트와 새로운 맵의 Entrance 포인트를 맞추기
             Transform previousExit = previousMap.transform.Find("Exit");
             Transform newEntrance = newMap.transform.Find("Entrance");
             if (previousExit != null && newEntrance != null)
             {
-                Vector3 positionOffset = (previousExit.position - newEntrance.position) + new Vector3(0, 0, 1.5f);
+                Vector3 positionOffset = previousExit.position - newEntrance.position;
                 newMap.transform.position += positionOffset;
-                Debug.Log($"Set new map position with offset: {positionOffset}");
 
-                // 플레이어의 위치 조정
-                if (PlayerController.Instance == null)
-                {
-                    Debug.LogError("PlayerController.Instance is null. Cannot set player position.");
-                    isLoadingMap = false;
-                    return;
-                }
-                else
-                {
-                    PlayerController.Instance.transform.position = newEntrance.position;
-                    PlayerController.Instance.transform.rotation = newEntrance.rotation;
-                    Debug.Log("Player position set to new Entrance.");
-                }
-            }
-            else
-            {
-                Debug.LogError("Exit or Entrance point missing in the map prefabs.");
+                // 플레이어 위치 조정
+                PlayerController.Instance.transform.position = newEntrance.position + positionOffset;
+                PlayerController.Instance.transform.rotation = newEntrance.rotation;
             }
 
             // 이전 맵 비활성화 및 ObjectPool로 반환
-            previousMap.SetActive(false); // 이전 맵 비활성화
+            previousMap.SetActive(false);
             ObjectPool.Instance.ReturnObject(previousMap);
-            Debug.Log("Old map deactivated and returned to pool.");
         }
 
-        // 새 맵을 큐에 추가하고 이전 맵으로 설정
-        mapQueue.Enqueue(newMap);
+        // 새 맵 활성화 및 설정
+        newMap.SetActive(true);
         previousMap = newMap;
         currentMapIndex++;
 
         // 플레이어의 다음 목적지 설정
-        if (PlayerController.Instance != null)
-        {
-            PlayerController.Instance.SetNextDestination();
-            Debug.Log("Player's next destination set.");
-        }
+        PlayerController.Instance.SetNextDestination();
 
         // 새로운 맵의 몬스터 스폰
         MapController mapController = newMap.GetComponent<MapController>();
         if (mapController != null)
         {
             mapController.SpawnMonsters();
-            Debug.Log("Monsters spawned in the new map.");
-        }
-        else
-        {
-            Debug.LogError("MapController not found on the map prefab.");
         }
 
         isLoadingMap = false;
@@ -131,7 +105,6 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
     // 플레이어가 Exit에 도달했을 때 
     public void OnPlayerReachExit()
     {
-        Debug.Log("OnPlayerReachExit called.");
         LoadNextMap();
     }
 }

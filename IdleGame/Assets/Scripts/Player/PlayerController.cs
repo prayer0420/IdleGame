@@ -120,6 +120,7 @@ public class PlayerController : MonoBehaviour
     }
 
 
+
     public void SetNextDestination()
     {
         ExitPoint = GameObject.FindGameObjectWithTag("Exit");

@@ -962,6 +962,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 3888033710985726874, guid: 6e0f67d19c2fa874ebae256c86f0167c, type: 3}
+  mapPrefabsToPreload:
+  - {fileID: 4313908841680062093, guid: 211bc73d469b76c4cbf219e14d93cbde, type: 3}
+  monsterPrefabsToPreload:
+  - {fileID: 2750589274668665581, guid: c378488378f2dc14fb8b5f7d3d42c687, type: 3}
 --- !u!1 &1173530135
 GameObject:
   m_ObjectHideFlags: 0
