@@ -10,6 +10,9 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
     private Queue<GameObject> mapQueue = new Queue<GameObject>();
     private GameObject previousMap; // 이전 맵을 저장
 
+    private bool isLoadingMap = false;
+
+
     // 게임 시작 시 첫 맵 로드
     public void StartGame()
     {
@@ -20,12 +23,20 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
     public void LoadNextMap()
     {
         GameObject mapPrefab;
+        if (isLoadingMap)
+        {
+            Debug.LogWarning("Already loading a map.");
+            return;
+        }
+        isLoadingMap = true;
 
         if (currentMapIndex < 5)
         {
             // 일반 맵 로드 (랜덤하게)
             if (normalMapPrefabs.Count == 0)
             {
+                isLoadingMap = false;
+
                 return;
             }
             int randomIndex = Random.Range(0, normalMapPrefabs.Count);
@@ -36,6 +47,8 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             // 보스 맵 로드
             if (bossMapPrefab == null)
             {
+                isLoadingMap = false;
+
                 return;
             }
             mapPrefab = bossMapPrefab;
@@ -57,6 +70,8 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
                 // 플레이어가 존재하지 않으면 반환
                 if (PlayerController.Instance == null)
                 {
+                    isLoadingMap = false;
+
                     return;
                 }
                 else // 플레이어의 위치 조정
@@ -95,7 +110,7 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             mapController.SpawnMonsters();
             Debug.Log("몬스터 생성");
         }
-        PlayerController.Instance.IsCreateMap = false;
+        isLoadingMap = false;
     }
 
     // 플레이어가 Exit에 도달했을 때 

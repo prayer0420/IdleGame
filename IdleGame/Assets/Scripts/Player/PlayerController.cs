@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance;
     public Animator Animator { get; private set; }
     public CharacterController CharacterController { get; private set; }
     public EnemyController CurrentTarget { get; set; }
@@ -14,7 +15,7 @@ public class PlayerController : MonoBehaviour
     public float detectRange = 5f;
     public float MaxHealth;
 
-    public float Health { get; set; }
+    [SerializeField] public float Health { get; set; }
     public float AttackPower { get; set; }
     public float DefensePower { get; set; }
 
@@ -32,38 +33,24 @@ public class PlayerController : MonoBehaviour
     public float gravity = -9.81f;
     private Vector3 velocity;
     private bool isGrounded;
-    public float groundCheckDistance = 0.4f;
+    public float groundCheckDistance = .4f;
     public LayerMask groundMask;
 
     public Transform groundCheck;
 
     public Transform equipPosition;
 
-    public bool IsCreateMap = false;
 
-    private static PlayerController instance;
-
-    public static PlayerController Instance
-    {
-        get
-        {
-            // 인스턴스가 이미 존재할 때만 반환
-            if (instance == null)
-            {
-                Debug.LogError(typeof(PlayerController) + " 싱글톤 인스턴스가 존재하지 않습니다.");
-            }
-            return instance;
-        }
-    }
+    
 
     public void Awake()
     {
-        if (instance == null)
+        if (Instance == null)
         {
-            instance = this as PlayerController;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        else if (instance != this)
+        else if (Instance != this)
         {
             Destroy(gameObject);
         }
@@ -74,11 +61,21 @@ public class PlayerController : MonoBehaviour
 
     public void Start()
     {
+        CharacterData data = CharacterDatabase.Instance.playerData;
+        if (data != null)
+        {
+            MaxHealth = data.Health;
+            Health = data.Health;
+            AttackPower = data.AttackPower;
+            DefensePower = data.DefensePower;
+        }
+
         // 상태 머신 초기화
         stateMachine = new PlayerStateMachine(this);
+        stateMachine.ChangeState(stateMachine.MoveState);
         SetStartPosition();
         SetNextDestination();
-        stateMachine.ChangeState(stateMachine.MoveState);
+
     }
 
     public void Update()
@@ -101,19 +98,6 @@ public class PlayerController : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         CharacterController.Move(velocity * Time.deltaTime);
     }
-
-    public void HandleDataLoadComplete()
-    {
-        CharacterData data = CharacterDatabase.Instance.playerData;
-        if (data != null)
-        {
-            MaxHealth = data.Health;
-            Health = data.Health;
-            AttackPower = data.AttackPower;
-            DefensePower = data.DefensePower;
-        }
-    }
-
     public void SetStartPosition()
     {
         GameObject entrance = GameObject.FindGameObjectWithTag("Entrance");
@@ -138,10 +122,9 @@ public class PlayerController : MonoBehaviour
         if (ExitPoint == null)
             return;
 
-        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < .1f && !IsCreateMap)
+        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < .1f)
         {
             // Exit에 도달함
-            IsCreateMap = true;
             MapManager.Instance.OnPlayerReachExit();
             SetNextDestination();
         }

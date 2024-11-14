@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
@@ -40,19 +41,19 @@ public class EnemyController : MonoBehaviour
         playerTransform = PlayerController.Instance.transform;
     }
 
-    public void OnEnable()
-    {
-        if (EnemyDatabase.Instance.EnemyDatas != null && EnemyDatabase.Instance.EnemyDatas.Count > 0)
-        {
-            HandleDataLoadComplete();
-        }
-        else
-        {
-            EnemyDatabase.Instance.DataLoadComplete += HandleDataLoadComplete;
-        }
-    }
 
     public void HandleDataLoadComplete()
+    {
+
+    }
+
+    public void OnDisable()
+    {
+        Health = 100f;
+        AttackPower = 10f;
+        DefensePower = 5f;
+    }
+    public void Start()
     {
         // 적 데이터 로드
         int enemyID = 1; // 적의 ID를 설정하거나 프리팹에서 설정할 수 있도록 변경
@@ -63,19 +64,8 @@ public class EnemyController : MonoBehaviour
             AttackPower = enemyData.AttackPower;
             DefensePower = enemyData.DefensePower;
         }
-    }
 
-    public void OnDisable()
-    {
-        EnemyDatabase.Instance.DataLoadComplete -= HandleDataLoadComplete;
-        Health = 100f;
-        AttackPower = 10f;
-        DefensePower = 5f;
-    }
-    public void Start()
-    {
         stateMachine.ChangeState(stateMachine.IdleState);
-        
     }
 
     public void Update()
