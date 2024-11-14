@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 
     public float moveSpeed = 2f;
     public float attackRange = 1.5f;
-    public float detectRange = 5f;
+    public float detectRange = 3f;
     public float MaxHealth;
 
     [SerializeField] public float Health { get; set; }
@@ -41,7 +41,8 @@ public class PlayerController : MonoBehaviour
     public Transform equipPosition;
 
 
-    
+    private bool hasReachedExit = false;
+
 
     public void Awake()
     {
@@ -82,7 +83,6 @@ public class PlayerController : MonoBehaviour
     {
         HandleGravity();
         stateMachine.Update();
-        CheckIfReachedExit();
         //CheckForItemInteraction();
     }
 
@@ -108,25 +108,24 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void OnPlayerReachExit()
+    {
+        if (!hasReachedExit)
+        {
+            hasReachedExit = true;
+            MapManager.Instance.OnPlayerReachExit();
+            SetNextDestination();
+        }
+        hasReachedExit = false;
+    }
+
+
     public void SetNextDestination()
     {
         ExitPoint = GameObject.FindGameObjectWithTag("Exit");
         if (ExitPoint == null)
         {
             return;
-        }
-    }
-
-    private void CheckIfReachedExit()
-    {
-        if (ExitPoint == null)
-            return;
-
-        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < .1f)
-        {
-            // Exit에 도달함
-            MapManager.Instance.OnPlayerReachExit();
-            SetNextDestination();
         }
     }
 

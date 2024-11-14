@@ -30,7 +30,7 @@ public class EnemyController : MonoBehaviour
     public Transform groundCheck;
 
 
-    public bool IsDead => Health <= 0f;
+    public bool IsDead;
 
     public void Awake()
     {
@@ -39,12 +39,6 @@ public class EnemyController : MonoBehaviour
 
         stateMachine = new EnemyStateMachine(this);
         playerTransform = PlayerController.Instance.transform;
-    }
-
-
-    public void HandleDataLoadComplete()
-    {
-
     }
 
     public void OnDisable()
@@ -132,8 +126,11 @@ public class EnemyController : MonoBehaviour
     public void TakeDamage(float damage)
     {
         Health -= damage;
-        if (IsDead)
+
+        if (Health<=0f)
         {
+            IsDead = true;
+            Debug.Log("몬스터 사망");
             Die();
         }
         Debug.Log($"{this.name}가 공격받았다. HP : {Health}");

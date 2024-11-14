@@ -95,11 +95,6 @@ public class MapController : MonoBehaviour
                 float distanceToPlayer = Vector3.Distance(randomPosition, PlayerController.Instance.transform.position);
                 validPosition = distanceToPlayer >= minSpawnDistanceFromPlayer;
             }
-            else
-            {
-                validPosition = true;
-            }
-
             attempts++;
         }
         while (!validPosition && attempts < maxAttempts);
