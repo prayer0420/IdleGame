@@ -54,6 +54,7 @@ public class GameManager : SingletonDontDestroyOnLoad<GameManager>
         if (playerInstance != null)
         {
             playerInstance.name = playerPrefab.name;
+            Debug.Log(playerInstance.transform.position);
         }
     }
 

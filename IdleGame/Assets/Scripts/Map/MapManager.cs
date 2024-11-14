@@ -19,8 +19,6 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
 
     public void LoadNextMap()
     {
-
-
         GameObject mapPrefab;
 
         if (currentMapIndex < 5)
@@ -56,15 +54,12 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
             {
                 Vector3 positionOffset = previousExit.position - newEntrance.position;
                 newMap.transform.position += positionOffset;
-
                 // 플레이어가 존재하지 않으면 반환
                 if (PlayerController.Instance == null)
                 {
                     return;
                 }
-
-                // 플레이어의 위치 조정
-                if (PlayerController.Instance != null)
+                else // 플레이어의 위치 조정
                 {
                     PlayerController.Instance.transform.position = newEntrance.position;
                     PlayerController.Instance.transform.rotation = newEntrance.rotation;
@@ -81,7 +76,6 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
         mapQueue.Enqueue(newMap);
         previousMap = newMap;
         currentMapIndex++;
-
         // 맵 관리 (필요 시 이전 맵 반환)
         if (mapQueue.Count > 3)
         {
@@ -94,12 +88,14 @@ public class MapManager : SingletonDontDestroyOnLoad<MapManager>
         {
             PlayerController.Instance.SetNextDestination();
         }
-
+        
         MapController mapController = newMap.GetComponent<MapController>();
         if (mapController != null)
         {
             mapController.SpawnMonsters();
+            Debug.Log("몬스터 생성");
         }
+        PlayerController.Instance.IsCreateMap = false;
     }
 
     // 플레이어가 Exit에 도달했을 때 

@@ -22,25 +22,20 @@ public class MapController : MonoBehaviour
 
     public void Start()
     {
-        // 출구 비활성화
-        GameObject exitPoint = transform.Find("Exit")?.gameObject;
-        if (exitPoint != null)
-        {
-            exitPoint.SetActive(false);
-        }
-        else
-        {
-            Debug.LogError("Exit 포인트가 맵 프리팹에 존재하지 않습니다.");
-        }
-
-        SpawnMonsters();
+        //// 출구 비활성화
+        //GameObject exitPoint = transform.Find("Exit")?.gameObject;
+        //if (exitPoint != null)
+        //{
+        //    exitPoint.SetActive(false);
+        //}
+        //SpawnMonsters();
     }
 
     public void SpawnMonsters()
     {
         if (monsterPrefabs == null || monsterPrefabs.Count == 0)
         {
-            Debug.LogWarning("몬스터 프리팹이 할당되지 않았습니다.");
+            Debug.Log("적 생성 이상");
             return;
         }
 
@@ -52,7 +47,6 @@ public class MapController : MonoBehaviour
 
             if (monster == null)
             {
-                Debug.LogWarning("몬스터 인스턴스를 가져올 수 없습니다.");
                 continue;
             }
 
@@ -70,7 +64,6 @@ public class MapController : MonoBehaviour
             else
             {
                 ObjectPool.Instance.ReturnObject(monster);
-                Debug.LogError("몬스터 프리팹에 EnemyController가 없습니다.");
             }
         }
     }
@@ -79,7 +72,6 @@ public class MapController : MonoBehaviour
     {
         if (mapCollider == null)
         {
-            Debug.LogError("MapController의 Collider가 설정되지 않았습니다.");
             return Vector3.zero;
         }
 
@@ -114,7 +106,6 @@ public class MapController : MonoBehaviour
 
         if (!validPosition)
         {
-            Debug.LogWarning("유효한 스폰 위치를 찾지 못했습니다. 기본 위치 사용.");
             randomPosition = bounds.center;
         }
 
@@ -130,7 +121,7 @@ public class MapController : MonoBehaviour
 
             if (spawnedMonsters.Count == 0)
             {
-                ActivateExit();
+                //ActivateExit();
             }
         }
     }
@@ -141,20 +132,15 @@ public class MapController : MonoBehaviour
         if (exitPoint != null)
         {
             exitPoint.SetActive(true);
-            Debug.Log("Exit point activated.");
-        }
-        else
-        {
-            Debug.LogError("Exit 포인트를 찾을 수 없습니다.");
         }
     }
 
-    void OnDisable()
-    {
-        foreach (GameObject monster in spawnedMonsters)
-        {
-            ObjectPool.Instance.ReturnObject(monster);
-        }
-        spawnedMonsters.Clear();
-    }
+    //public void OnDisable()
+    //{
+    //    foreach (GameObject monster in spawnedMonsters)
+    //    {
+    //        ObjectPool.Instance.ReturnObject(monster);
+    //    }
+    //    spawnedMonsters.Clear();
+    //}
 }

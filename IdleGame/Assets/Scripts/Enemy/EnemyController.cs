@@ -153,19 +153,15 @@ public class EnemyController : MonoBehaviour
     {
         Animator.SetTrigger("Die");
         // 현재 맵에 몬스터 사망을 알림
-        if (currentMap != null)
-        {
-            currentMap.OnMonsterDeath(gameObject);
-        }
         // 사망 애니메이션 후 처리
         StartCoroutine(HandleDeath());
+        currentMap.OnMonsterDeath(gameObject);
     }
 
     private IEnumerator HandleDeath()
     {
         // 사망 애니메이션의 길이만큼 대기
-        yield return new WaitForSeconds(2f); // 애니메이션 길이에 맞게 조정하세요.
-                                             // 게임 오브젝트 비활성화
+        yield return new WaitForSeconds(2f); 
         gameObject.SetActive(false);
     }
 

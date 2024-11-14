@@ -39,6 +39,8 @@ public class PlayerController : MonoBehaviour
 
     public Transform equipPosition;
 
+    public bool IsCreateMap = false;
+
     private static PlayerController instance;
 
     public static PlayerController Instance
@@ -136,9 +138,10 @@ public class PlayerController : MonoBehaviour
         if (ExitPoint == null)
             return;
 
-        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < 1f)
+        if (Vector3.Distance(transform.position, ExitPoint.transform.position) < .1f && !IsCreateMap)
         {
             // Exit에 도달함
+            IsCreateMap = true;
             MapManager.Instance.OnPlayerReachExit();
             SetNextDestination();
         }
